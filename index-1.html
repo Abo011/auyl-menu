@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="kk">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f7f7f5"><title>Ауыл — QR мәзір</title>
+<style>
+:root{--ink:#19221f;--muted:#77817b;--green:#16694c;--bg:#f7f7f5;--line:#e9ece7}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,'Segoe UI',sans-serif}.wrap{max-width:850px;margin:auto;padding:0 20px 60px}.hero{background:#173d30;color:white;border-radius:0 0 30px 30px;padding:34px 24px 30px;position:relative;overflow:hidden}.hero:after{content:'✦';position:absolute;right:22px;top:6px;font-size:130px;color:#ffffff0e}.eyebrow{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#b5d7c7}.hero h1{font-size:clamp(30px,7vw,46px);margin:10px 0 6px}.hero p{margin:0;color:#c7d8ce}.tag{display:inline-block;background:#ffffff1c;padding:8px 12px;border-radius:50px;margin-top:22px;font-size:13px}.heading{margin:30px 0 14px;font-size:24px}.search{display:block;width:100%;border:1px solid var(--line);border-radius:16px;background:white;padding:16px;font:inherit;outline-color:var(--green)}.chips{display:flex;gap:9px;overflow-x:auto;padding:18px 0 6px;scrollbar-width:none}.chip{flex:none;border:1px solid #dfe6e0;background:white;padding:10px 16px;border-radius:30px;font:inherit;cursor:pointer}.chip.active{background:var(--green);color:white;border-color:var(--green)}.count{font-size:13px;color:var(--muted);margin:10px 0 15px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.food{background:white;border:1px solid var(--line);border-radius:20px;overflow:hidden}.picture{height:155px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#edf3eb,#e0e9de);font-size:62px}.details{padding:16px}.category{font-size:11px;color:var(--green);font-weight:700;text-transform:uppercase;letter-spacing:.7px}.food h3{font-size:17px;margin:7px 0}.desc{color:var(--muted);font-size:13px;line-height:1.5;min-height:38px;margin:0 0 12px}.price{font-size:18px;font-weight:800}.empty{text-align:center;padding:50px 15px;color:var(--muted);background:white;border-radius:18px}.footer{text-align:center;margin-top:35px;color:var(--muted);font-size:13px}@media(max-width:420px){.wrap{padding:0 13px 50px}.hero{padding:30px 20px}.grid{gap:10px}.picture{height:115px;font-size:48px}.details{padding:12px}.food h3{font-size:15px}.price{font-size:16px}}
+
+.music-control{position:fixed;right:18px;bottom:20px;z-index:10;border:0;border-radius:999px;background:#16694c;color:white;padding:13px 18px;font:600 14px system-ui;box-shadow:0 8px 25px #123b2b44;cursor:pointer}.music-control:focus-visible{outline:3px solid #e6b86b;outline-offset:3px}
+</style>
+</head>
+<body><div class="wrap"><header class="hero"><div class="eyebrow">Digital menu · QR</div><h1>Ауыл</h1><p>Дәмді сәттер осы жерден басталады</p><span class="tag">✦ Қош келдіңіз!</span></header><main><h2 class="heading">Біздің мәзір</h2><input id="search" class="search" type="search" placeholder="🔎  Тағамды іздеу..." aria-label="Тағамды іздеу"><nav class="chips" id="categories" aria-label="Санаттар"></nav><p class="count" id="count"></p><div class="grid" id="menu"></div></main><footer class="footer">© <span id="year"></span> Ауыл · Ас болсын!</footer></div><button id="musicToggle" class="music-control" type="button" aria-pressed="false">♫ Әуенді қосу</button>
+<script>
+// ТАҒАМДАРДЫ ОСЫ ЖЕРДЕ ӨЗГЕРТІҢІЗ.
+// name = атауы, category = санаты, description = сипаттамасы,
+// price = бағасы (теңге), emoji = сурет орнына белгіше.
+// Өз суретіңізді қосу үшін image: "images/lavash.jpg" деп жазыңыз.
+const foods = [
+  {name:'Тауық лаваш',category:'Негізгі тағамдар',description:'Тауық еті, көкөніс, фирмалық соус',price:1500,emoji:'🌯'},
+  {name:'Чизбургер',category:'Негізгі тағамдар',description:'Шырынды котлет, ірімшік, көкөніс',price:1800,emoji:'🍔'},
+  {name:'Картоп фри',category:'Тіскебасарлар',description:'Алтын түсті қытырлақ картоп',price:700,emoji:'🍟'},
+  {name:'Пицца',category:'Негізгі тағамдар',description:'Ірімшік пен қызанақ соусы',price:2900,emoji:'🍕'},
+  {name:'Капучино',category:'Сусындар',description:'Хош иісті кофе және сүт көбігі',price:950,emoji:'☕'},
+  {name:'Лимонад',category:'Сусындар',description:'Салқын сергітетін сусын',price:850,emoji:'🍋'}
+];
+let active='Барлығы';const menu=document.getElementById('menu'),cats=document.getElementById('categories'),search=document.getElementById('search');
+const money=n=>new Intl.NumberFormat('kk-KZ').format(n)+' ₸';
+function node(tag,cls,text){const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el}
+function renderCategories(){cats.replaceChildren();['Барлығы',...new Set(foods.map(f=>f.category))].forEach(c=>{const b=node('button','chip'+(active===c?' active':''),c);b.type='button';b.setAttribute('aria-pressed',String(active===c));b.onclick=()=>{active=c;renderCategories();render()};cats.append(b)})}
+function render(){menu.replaceChildren();const q=search.value.trim().toLocaleLowerCase('kk');const shown=foods.filter(f=>(active==='Барлығы'||f.category===active)&&[f.name,f.description,f.category].join(' ').toLocaleLowerCase('kk').includes(q));document.getElementById('count').textContent=shown.length+' тағам';if(!shown.length){const e=node('div','empty','Ештеңе табылмады. Басқа атаумен іздеп көріңіз.');e.style.gridColumn='1/-1';menu.append(e);return}shown.forEach(f=>{const card=node('article','food');const pic=node('div','picture');if(f.image){const img=document.createElement('img');img.src=f.image;img.alt=f.name;img.loading='lazy';img.style.cssText='width:100%;height:100%;object-fit:cover';img.onerror=()=>pic.replaceChildren(document.createTextNode(f.emoji||'🍽️'));pic.append(img)}else pic.textContent=f.emoji||'🍽️';const d=node('div','details');d.append(node('span','category',f.category),node('h3','',f.name),node('p','desc',f.description),node('div','price',money(f.price)));card.append(pic,d);menu.append(card)})}
+search.addEventListener('input',render);document.getElementById('year').textContent=new Date().getFullYear();renderCategories();render();
+// Музыка файлын өзіңіз рұқсатпен music/auyrmaidy-zhurek.mp3 жолына салыңыз.
+// Телефон браузері дыбысты пайдаланушы басқаннан кейін ғана ойнатады.
+const musicButton=document.getElementById('musicToggle');
+const song=new Audio('music/auyrmaidy-zhurek.mp3');
+song.loop=true;
+song.volume=0.35;
+musicButton.textContent='♫ Ауырмайды жүрек · қосу';
+musicButton.addEventListener('click',async()=>{
+  if(!song.paused){song.pause();musicButton.textContent='♫ Ауырмайды жүрек · қосу';musicButton.setAttribute('aria-pressed','false');return;}
+  try{await song.play();musicButton.textContent='♫ Әнді тоқтату';musicButton.setAttribute('aria-pressed','true');}
+  catch(e){musicButton.textContent='MP3 файлын қосыңыз';musicButton.setAttribute('aria-pressed','false');}
+});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&!song.paused){song.pause();musicButton.textContent='♫ Ауырмайды жүрек · қосу';musicButton.setAttribute('aria-pressed','false');}});
+</script></body></html>
